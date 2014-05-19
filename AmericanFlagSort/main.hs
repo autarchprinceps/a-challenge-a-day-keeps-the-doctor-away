@@ -1,13 +1,62 @@
 import qualified Data.Map as M
 import qualified Data.Vector as V
+import qualified Data.Bits as B
 
--- TODO replace == with bit comparison
-cond bucket item
-	| item == bucket = 1
+bucketify startBitToCheck numBitToCheck item = (B.shiftR (B.shiftL item startBitToCheck) ((B.bitSize a) - (startBitToCheck + numBitToCheck)))
+
+cond startBitToCheck numBitToCheck bucket item
+	| bucketify startBitToCheck numBitToCheck item == bucket = 1
 	| otherwise = 0
 
-count arr radix = M.elems $ M.fromList [ (bucket, foldr (+) 0 $ map (cond bucket) arr) | bucket <- [0 .. radix - 1]]
+count varr startBitToCheck numBitToCheck = V.fromList $ M.elems $ M.fromList [ (bucket, V.foldr (+) 0 $ V.map (cond startBitToCheck numBitToCheck bucket) arr) | bucket <- [0 .. (2 ^ numBitToCheck) - 1]] -- TODO 2 ^ X ?
 
--- TODO replace V.fromList
-offset arr radix = M.elems $ M.fromList [ (i, foldr (+) 0 $ V.slice 0 i counts) | i <- [1 .. radix]]
-	where counts = V.fromList $ count arr radix 
+offset varr startBitToCheck numBitToCheck = V.fromList $ M.elems $ M.fromList [ (i, V.foldr (+) 0 $ V.slice 0 i counts) | i <- [1 .. (2 ^ numBitToCheck)]]
+	where counts = count arr startBitToCheck numBitToCheck 
+
+swap varr idx1 idx2 = varr V.// [(idx1, varr V.! idx2), (idx2, varr V.! idx1)]
+
+vinc vec idx = vec V.// [(idx, 1 + (vec V.! idx))]
+
+-- TODO: mutable vectors ?
+-- current_idx = fst subset
+-- in_bucket = 0
+-- loop:
+-- 	currbucket = bucketify $ varr ! current_idx
+-- 	if currbucket == in_bucket then
+--		finished = vinc finished, currbucket
+--		current_idx++
+--		if(in_bucket < (V.length offsets) - 1) then
+--			if(current_idx > offsets ! (in_bucket + 1)) then
+--				in_bucket++
+--			end
+--			continue
+--		else
+--			if(current_idx < (snd subset) - 1) then
+--				continue
+--			else
+--				break
+--			end
+--		end
+--	end
+-- 	varr = swap varr, current_idx, (offsets ! currbucket) + (finished ! currbucket)
+-- 	finished = vinc finished, currbucket
+-- end
+-- reksor = []
+-- for(i: [0 .. V.length offsets - 2]) do
+--	if(offsets ! (i + 1) - offsets ! i > 1) then
+--		reksor = reksor ++ [(offsets ! i, offsets ! (i + 1))]
+--	end
+-- end
+-- return varr V.// (foldr (++) [] (map (afs_changeset varr (startBitToCheck + numBitToCheck) numBitToCheck) reksor))
+
+afs varr startBitToCheck numBitToCheck subset = do
+	current_idx = fst subset
+	in_bucket = 0
+
+	where offsets = offset (V.slice (fst subset) (snd subset) varr)  startBitToCheck numBitToCheck
+		  finished = V.replicate (V.length offsets) 0
+
+afs_changeset varr startBitToCheck numBitToCheck subset = [(i, chvarr V.! i) | i <- [0 .. (V.length chvarr) - 1]]
+	where chvarr = (V.slice (fst subset) (snd subset) (afs varr startBitToCheck numBitToCheck subset))
+
+sort arr numBitToCheck = afs varr 0 numBitToCheck (0,(V.length varr))
