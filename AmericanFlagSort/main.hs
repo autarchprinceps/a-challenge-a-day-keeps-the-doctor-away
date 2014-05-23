@@ -17,6 +17,9 @@ swap varr idx1 idx2 = varr V.// [(idx1, varr V.! idx2), (idx2, varr V.! idx1)]
 
 vinc vec idx = vec V.// [(idx, 1 + (vec V.! idx))]
 
+afs varr startBitToCheck numBitToCheck subset = do
+	current_idx = fst subset
+	in_bucket = 0
 -- TODO: mutable vectors ?
 -- current_idx = fst subset
 -- in_bucket = 0
@@ -41,17 +44,8 @@ vinc vec idx = vec V.// [(idx, 1 + (vec V.! idx))]
 -- 	varr = swap varr, current_idx, (offsets ! currbucket) + (finished ! currbucket)
 -- 	finished = vinc finished, currbucket
 -- end
--- reksor = []
--- for(i: [0 .. V.length offsets - 2]) do
---	if(offsets ! (i + 1) - offsets ! i > 1) then
---		reksor = reksor ++ [(offsets ! i, offsets ! (i + 1))]
---	end
--- end
+-- reksor = (filter (not . null) (map (\i -> if offsets V.! (i + 1) - offsets ! i > 1 then (offsets V.! i, offsets V.! (i + 1)) else []) [0 .. V.length offsets - 2])) ++ (V.last offsets, V.length varr)
 -- return varr V.// (foldr (++) [] (map (afs_changeset varr (startBitToCheck + numBitToCheck) numBitToCheck) reksor))
-
-afs varr startBitToCheck numBitToCheck subset = do
-	current_idx = fst subset
-	in_bucket = 0
 
 	where offsets = offset (V.slice (fst subset) (snd subset) varr)  startBitToCheck numBitToCheck
 		  finished = V.replicate (V.length offsets) 0
