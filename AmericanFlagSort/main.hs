@@ -43,7 +43,6 @@ afs varr startBitToCheck numBitToCheck subset = do
 -- 	finished = vinc finished, currbucket
 -- end
 return varr V.// (foldr (++) [] (map (afs_changeset varr (startBitToCheck + numBitToCheck) numBitToCheck) ((filter (not . null) (map (\i -> if offsets V.! (i + 1) - offsets ! i > 1 then (offsets V.! i, offsets V.! (i + 1)) else []) [0 .. V.length offsets - 2])) ++ (V.last offsets, V.length varr))))
-
 	where offsets = offset (V.slice (fst subset) (snd subset) varr)  startBitToCheck numBitToCheck
 		  finished = V.replicate (V.length offsets) 0
 
